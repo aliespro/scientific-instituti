@@ -22,6 +22,8 @@ import {
   Timer,
   Link2,
   ChevronDown,
+  Award,
+  BarChart3,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -36,12 +38,14 @@ import {
   riskStatusLabels, riskStatusColors, riskSeverity,
   projectHealthLabels, projectHealthColors, projectHealthDot,
   dependencyTypeLabels,
+  academicRankLabels,
 } from '@/lib/labels';
 import type { ProjectHealth } from '@/lib/labels';
-import { toPersianDateShort, toPersianDate, toPersianNumber, formatCurrency } from '@/lib/persianDate';
+import { toPersianDateShort, toPersianDate, toPersianNumber, formatCurrency, formatDuration, formatDurationShort } from '@/lib/persianDate';
 import { Avatar, ProgressBar, Spinner, Badge, EmptyState } from '@/components/ui';
 import { KanbanBoard } from '@/components/KanbanBoard';
 import { TaskDetailModal } from '@/components/TaskDetailModal';
+import { useTimer, formatElapsed } from '@/contexts/TimerContext';
 
 type TabId = 'overview' | 'kanban' | 'gantt' | 'milestones' | 'risks' | 'activity' | 'time';
 
@@ -64,7 +68,9 @@ const tabs: TabDef[] = [
 export function ProjectDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { saveStatus } = useTimer();
   const [loading, setLoading] = useState(true);
+  const [timePulse, setTimePulse] = useState(false);
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [columns, setColumns] = useState<ProjectColumn[]>([]);
@@ -81,8 +87,17 @@ export function ProjectDetailPage() {
     if (id) loadData(id);
   }, [id]);
 
+  useEffect(() => {
+    if (saveStatus === 'saved' && id) {
+      loadData(id);
+      setTimePulse(true);
+      const t = setTimeout(() => setTimePulse(false), 2000);
+      return () => clearTimeout(t);
+    }
+  }, [saveStatus, id]);
+
   async function loadData(projectId: string) {
-    const [p, t, c, m, ms, r, act, te, deps] = await Promise.all([
+    const [p, t, c, m, ms, r, act, deps] = await Promise.all([
       supabase.from('projects').select('*, leader:members(*), department:departments(*), org_unit:org_units(*)').eq('id', projectId).maybeSingle(),
       supabase.from('tasks').select('*, assignee:members(*), column:project_columns(*)').eq('project_id', projectId).order('position'),
       supabase.from('project_columns').select('*').eq('project_id', projectId).order('position'),
@@ -90,9 +105,18 @@ export function ProjectDetailPage() {
       supabase.from('milestones').select('*, owner:members(*)').eq('project_id', projectId).order('due_date'),
       supabase.from('risks').select('*, owner:members(*)').eq('project_id', projectId).order('created_at', { ascending: false }),
       supabase.from('activity_feed').select('*, actor:members(*)').eq('project_id', projectId).order('created_at', { ascending: false }).limit(50),
-      supabase.from('time_entries').select('*, member:members(*), task:tasks(*)').eq('task_id', `in.(${(await supabase.from('tasks').select('id').eq('project_id', projectId)).data?.map((row: { id: string }) => row.id).join(',') || '00000000-0000-0000-0000-000000000000'})`),
       supabase.from('task_dependencies').select('*, predecessor:tasks(*), successor:tasks(*)').eq('project_id', projectId),
     ]);
+
+    const taskIds = (t.data ?? []).map((row: { id: string }) => row.id);
+    let te: { data: TimeEntry[] | null } = { data: null };
+    if (taskIds.length > 0) {
+      te = await supabase
+        .from('time_entries')
+        .select('*, member:members(*), task:tasks(*)')
+        .in('task_id', taskIds)
+        .order('created_at', { ascending: false });
+    }
 
     setProject(p.data as Project | null);
     setTasks(t.data ?? []);
@@ -163,7 +187,7 @@ export function ProjectDetailPage() {
           } color="sky" />
           <HeaderStat icon={TrendingUp} label="بودجه" value={project.budget > 0 ? formatCurrency(project.budget) : 'نامشخص'} color="amber" />
           <HeaderStat icon={CheckCircle2} label="وظایف" value={`${toPersianNumber(doneCount)} از ${toPersianNumber(tasks.length)}`} color="teal" />
-          <HeaderStat icon={Clock} label="زمان ثبت‌شده" value={`${toPersianNumber(totalHours)} ساعت`} color="rose" />
+          <HeaderStat icon={Clock} label="زمان ثبت‌شده" value={formatDuration(totalHours)} color="rose" pulse={timePulse} />
         </div>
 
         {project.tags.length > 0 && (
@@ -201,7 +225,11 @@ export function ProjectDetailPage() {
       {activeTab === 'overview' && (
         <OverviewTab project={project} tasks={tasks} milestones={milestones} risks={risks} activities={activities} health={health} totalHours={totalHours} estimatedHours={estimatedHours} />
       )}
-      {activeTab === 'kanban' && <KanbanBoard projectId={project.id} members={members} />}
+      {activeTab === 'kanban' && (
+        <div className="flex-1 min-h-0">
+          <KanbanBoard projectId={project.id} members={members} />
+        </div>
+      )}
       {activeTab === 'gantt' && <GanttTab tasks={tasks} dependencies={dependencies} />}
       {activeTab === 'milestones' && <MilestonesTab projectId={project.id} milestones={milestones} members={members} onChanged={() => id && loadData(id)} />}
       {activeTab === 'risks' && <RisksTab projectId={project.id} risks={risks} members={members} onChanged={() => id && loadData(id)} />}
@@ -221,7 +249,7 @@ export function ProjectDetailPage() {
     </div>
   );
 
-  function HeaderStat({ icon: Icon, label, value, color }: { icon: LucideIcon; label: string; value: string; color: string }) {
+  function HeaderStat({ icon: Icon, label, value, color, pulse }: { icon: LucideIcon; label: string; value: string; color: string; pulse?: boolean }) {
     const colorMap: Record<string, string> = {
       emerald: 'bg-emerald-50 text-emerald-600',
       sky: 'bg-sky-50 text-sky-600',
@@ -230,8 +258,8 @@ export function ProjectDetailPage() {
       rose: 'bg-rose-50 text-rose-600',
     };
     return (
-      <div className="flex items-center gap-2">
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${colorMap[color]}`}>
+      <div className={`flex items-center gap-2 rounded-lg transition-all duration-500 ${pulse ? 'bg-rose-50 ring-2 ring-rose-200 px-2 py-1 -mx-2 -my-1' : ''}`}>
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${colorMap[color]} ${pulse ? 'scale-110' : ''} transition-transform`}>
           <Icon size={16} />
         </div>
         <div className="min-w-0">
@@ -311,7 +339,7 @@ function OverviewTab({
             <div className="flex items-center justify-between pt-3 border-t border-slate-50">
               <span className="text-sm text-slate-600">زمان برآورد vs واقعی</span>
               <span className="text-sm font-semibold text-slate-700">
-                {toPersianNumber(estimatedHours)}h / {toPersianNumber(totalHours)}h
+                {formatDuration(estimatedHours)} / {formatDuration(totalHours)}
               </span>
             </div>
           </div>
@@ -813,27 +841,71 @@ function ActivityTab({ activities }: { activities: ActivityEntry[] }) {
 
 // ===== Time Tracking Tab =====
 function TimeTab({ timeEntries, tasks, members, totalHours, estimatedHours }: { timeEntries: TimeEntry[]; tasks: Task[]; members: Member[]; totalHours: number; estimatedHours: number }) {
+  const { activeTimer, isRunning, isPaused, elapsedSeconds } = useTimer();
   const variance = estimatedHours - totalHours;
+  const maxMemberHours = Math.max(...members.map((m) => {
+    return timeEntries.filter((te) => te.member_id === m.id).reduce((s, te) => s + Number(te.hours), 0);
+  }), 0.001);
+
+  const memberBreakdown = members.map((m) => {
+    const entries = timeEntries.filter((te) => te.member_id === m.id);
+    const hours = entries.reduce((sum, te) => sum + Number(te.hours), 0);
+    const taskIds = new Set(entries.map((e) => e.task_id));
+    const memberTasks = tasks.filter((t) => taskIds.has(t.id));
+    return { member: m, hours, entries: entries.length, taskCount: memberTasks.length, sharePct: totalHours > 0 ? (hours / totalHours) * 100 : 0 };
+  }).filter((item) => item.hours > 0).sort((a, b) => b.hours - a.hours);
+
+  const sortedEntries = [...timeEntries].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  const memberColors = [
+    'from-emerald-400 to-teal-500',
+    'from-sky-400 to-blue-500',
+    'from-amber-400 to-orange-500',
+    'from-rose-400 to-pink-500',
+    'from-violet-400 to-indigo-500',
+    'from-cyan-400 to-teal-500',
+  ];
 
   return (
     <div className="space-y-5">
+      {/* Active timer banner */}
+      {activeTimer && (isRunning || isPaused) && (
+        <div className={`card p-4 animate-slide-down ${isPaused ? 'bg-gradient-to-l from-amber-50 to-orange-50 border-amber-200' : 'bg-gradient-to-l from-emerald-50 to-teal-50 border-emerald-200'}`} dir="rtl">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isPaused ? 'bg-amber-100' : 'bg-emerald-100'}`}>
+                <Timer size={22} className={isPaused ? 'text-amber-600' : 'text-emerald-600'} />
+              </div>
+              {!isPaused && <span className="absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full bg-emerald-500 animate-pulse ring-2 ring-white" />}
+            </div>
+            <div className="flex-1">
+              <p className={`text-xs font-medium ${isPaused ? 'text-amber-600' : 'text-emerald-600'}`}>{isPaused ? 'تایمر متوقف شد' : 'تایمر فعال برای این وظیفه'}</p>
+              <p className="text-sm font-bold text-slate-800">{activeTimer.taskTitle}</p>
+            </div>
+            <div className={`font-mono text-2xl font-bold tabular-nums ${isPaused ? 'text-amber-600' : 'text-emerald-600'}`} dir="ltr">
+              {formatElapsed(elapsedSeconds)}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <div className="card p-4">
           <div className="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center mb-3"><Clock size={18} /></div>
-          <p className="text-2xl font-bold text-slate-800">{toPersianNumber(estimatedHours)}h</p>
+          <p className="text-lg font-bold text-slate-800">{formatDuration(estimatedHours)}</p>
           <p className="text-xs text-slate-400">زمان برآورد شده</p>
         </div>
-        <div className="card p-4">
-          <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3"><Timer size={18} /></div>
-          <p className="text-2xl font-bold text-slate-800">{toPersianNumber(totalHours)}h</p>
+        <div className="card p-4 bg-gradient-to-br from-emerald-50/50 to-teal-50/30">
+          <div className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3"><Timer size={18} /></div>
+          <p className="text-lg font-bold text-emerald-700">{formatDuration(totalHours)}</p>
           <p className="text-xs text-slate-400">زمان ثبت شده</p>
         </div>
         <div className="card p-4">
           <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 ${variance >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
             <TrendingUp size={18} />
           </div>
-          <p className={`text-2xl font-bold ${variance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{toPersianNumber(Math.abs(variance))}h</p>
+          <p className={`text-lg font-bold ${variance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{formatDuration(Math.abs(variance))}</p>
           <p className="text-xs text-slate-400">{variance >= 0 ? 'زمان باقی‌مانده' : 'اضافی'}</p>
         </div>
         <div className="card p-4">
@@ -843,31 +915,111 @@ function TimeTab({ timeEntries, tasks, members, totalHours, estimatedHours }: { 
         </div>
       </div>
 
+      {/* Per-member cards */}
+      {memberBreakdown.length > 0 && (
+        <div className="card p-5">
+          <h3 className="font-bold text-slate-800 mb-1 flex items-center gap-2">
+            <BarChart3 size={18} className="text-slate-400" />
+            زمان به تفکیک اعضا
+          </h3>
+          <p className="text-xs text-slate-400 mb-5">کارکرد هر عضو روی این پروژه</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {memberBreakdown.map(({ member, hours, entries, taskCount, sharePct }, idx) => {
+              const gradient = memberColors[idx % memberColors.length];
+              const barWidth = (hours / maxMemberHours) * 100;
+              return (
+                <div key={member.id} className="relative rounded-2xl border border-slate-100 overflow-hidden hover:shadow-md transition-shadow group">
+                  {/* Top gradient strip */}
+                  <div className={`h-1.5 bg-gradient-to-l ${gradient}`} />
+
+                  <div className="p-4">
+                    {/* Member header */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <Avatar name={member.full_name} src={member.avatar_url} size="md" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-slate-800 truncate">{member.full_name}</p>
+                        {member.academic_rank && (
+                          <p className="text-[11px] text-slate-400 truncate">
+                            {academicRankLabels[member.academic_rank]}
+                          </p>
+                        )}
+                      </div>
+                      {idx === 0 && memberBreakdown.length > 1 && (
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 text-amber-600 text-[10px] font-bold">
+                          <Award size={12} />
+                          اول
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Hours display */}
+                    <div className="flex items-baseline justify-between mb-3">
+                      <div>
+                        <p className="text-2xl font-bold text-slate-800">{formatDuration(hours)}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">زمان کل کار</p>
+                      </div>
+                      <div className="text-left">
+                        <p className="text-lg font-bold text-emerald-600">{toPersianNumber(Math.round(sharePct))}<span className="text-sm">%</span></p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">سهم پروژه</p>
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-3">
+                      <div
+                        className={`h-full rounded-full bg-gradient-to-l ${gradient} transition-all duration-700 ease-out`}
+                        style={{ width: `${barWidth}%` }}
+                      />
+                    </div>
+
+                    {/* Stats row */}
+                    <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <ListTree size={11} />
+                        {toPersianNumber(taskCount)} وظیفه
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock size={11} />
+                        {toPersianNumber(entries)} ثبت
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Time entries table */}
       <div className="card overflow-hidden">
+        <h3 className="font-bold text-slate-800 px-5 py-4 border-b border-slate-100 flex items-center gap-2">
+          <Clock size={18} className="text-slate-400" />
+          تاریخچه ثبت زمان
+        </h3>
         <table className="w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-100">
             <tr>
               <th className="text-right font-semibold text-slate-600 px-4 py-3">وظیفه</th>
               <th className="text-right font-semibold text-slate-600 px-4 py-3 hidden md:table-cell">عضو</th>
-              <th className="text-right font-semibold text-slate-600 px-4 py-3">ساعت</th>
+              <th className="text-right font-semibold text-slate-600 px-4 py-3">مدت زمان</th>
               <th className="text-right font-semibold text-slate-600 px-4 py-3 hidden lg:table-cell">تاریخ</th>
               <th className="text-right font-semibold text-slate-600 px-4 py-3 hidden lg:table-cell">شرح</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {timeEntries.map((te) => (
+            {sortedEntries.map((te) => (
               <tr key={te.id} className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-4 py-3 font-medium text-slate-700">{te.task?.title ?? '—'}</td>
                 <td className="px-4 py-3 hidden md:table-cell">
                   {te.member && (
                     <div className="flex items-center gap-2">
-                      <Avatar name={te.member.full_name} size="sm" />
+                      <Avatar name={te.member.full_name} src={te.member.avatar_url} size="sm" />
                       <span className="text-xs text-slate-600">{te.member.full_name}</span>
                     </div>
                   )}
                 </td>
-                <td className="px-4 py-3 font-semibold text-emerald-600" dir="ltr">{toPersianNumber(Number(te.hours))}h</td>
+                <td className="px-4 py-3 font-semibold text-emerald-600">{formatDuration(Number(te.hours))}</td>
                 <td className="px-4 py-3 hidden lg:table-cell text-xs text-slate-500">{toPersianDateShort(te.entry_date)}</td>
                 <td className="px-4 py-3 hidden lg:table-cell text-xs text-slate-500">{te.description ?? '—'}</td>
               </tr>

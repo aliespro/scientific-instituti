@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { TimerProvider } from '@/contexts/TimerContext';
+import { TimerWidget } from '@/components/TimerWidget';
 import { LoginPage } from '@/pages/LoginPage';
 import { MainLayout } from '@/components/MainLayout';
 import { DashboardPage } from '@/pages/DashboardPage';
@@ -17,12 +19,6 @@ import { useEffect } from 'react';
 function ProtectedRoutes() {
   const { session, loading } = useAuth();
 
-   useEffect(() => {
-    document.querySelectorAll('.badge').forEach((element) => {
-      (element as HTMLElement).style.display = 'none !important';
-      (element as HTMLElement).style.color = 'red !important';
-    });
-  }, []);
   
   if (loading) return <Spinner className="min-h-screen" />;
 
@@ -36,6 +32,7 @@ function ProtectedRoutes() {
   }
 
   return (
+    <>
     <Routes>
       <Route path="/login" element={<Navigate to="/" replace />} />
       <Route
@@ -112,15 +109,19 @@ function ProtectedRoutes() {
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    <TimerWidget />
+    </>
   );
 }
 
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <ProtectedRoutes />
-      </BrowserRouter>
+      <TimerProvider>
+        <BrowserRouter>
+          <ProtectedRoutes />
+        </BrowserRouter>
+      </TimerProvider>
     </AuthProvider>
   );
 }

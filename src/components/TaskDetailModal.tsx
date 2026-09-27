@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react';
 import {
   X, Save, Trash2, Clock, Calendar, User, Flag, Tag,
   MessageSquare, Link2, ListTree, Timer, Plus, ChevronDown,
-  AlertCircle, CheckCircle2, Circle,
+  AlertCircle, CheckCircle2, Circle, Play, Square,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Task, Member, ProjectColumn, TaskDependency, TaskComment, TimeEntry, DependencyType } from '@/types';
 import { priorityLabels, dependencyTypeLabels } from '@/lib/labels';
 import type { LucideIcon } from 'lucide-react';
-import { toPersianDateShort, toPersianNumber, toPersianDate } from '@/lib/persianDate';
+import { toPersianDateShort, toPersianNumber, toPersianDate, formatDuration, formatDurationShort } from '@/lib/persianDate';
 import { Avatar, Badge, ProgressBar } from '@/components/ui';
+import { useTimer, formatElapsed } from '@/contexts/TimerContext';
 
 interface TaskDetailModalProps {
   task: Task;
@@ -23,6 +24,7 @@ interface TaskDetailModalProps {
 type DetailTab = 'details' | 'subtasks' | 'dependencies' | 'comments' | 'time';
 
 export function TaskDetailModal({ task, members, columns, allTasks, projectId, onClose }: TaskDetailModalProps) {
+  const { activeTimer, startTimer, stopTimer, isRunning, elapsedSeconds } = useTimer();
   const [activeTab, setActiveTab] = useState<DetailTab>('details');
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? '');
@@ -138,27 +140,53 @@ export function TaskDetailModal({ task, members, columns, allTasks, projectId, o
     setNewComment('');
   }
 
+  const [timeError, setTimeError] = useState<string | null>(null);
+
   async function addTimeEntry() {
     if (!newTimeHours.trim()) return;
-    const { data } = await supabase.from('time_entries').insert({
+    setTimeError(null);
+    const parsedHours = parseFloat(newTimeHours);
+    if (isNaN(parsedHours) || parsedHours <= 0) {
+      setTimeError('ساعت معتبر وارد کنید');
+      return;
+    }
+    const { data, error } = await supabase.from('time_entries').insert({
       task_id: task.id,
       member_id: members[0]?.id ?? null,
-      hours: parseFloat(newTimeHours),
+      hours: parsedHours,
       description: newTimeDesc || null,
       entry_date: new Date().toISOString().split('T')[0],
     }).select('*, member:members(*)').single();
+    if (error) {
+      setTimeError('ثبت زمان ناموفق بود. دوباره تلاش کنید.');
+      return;
+    }
     if (data) {
-      setTimeEntries([data as TimeEntry, ...timeEntries]);
+      const newEntries = [data as TimeEntry, ...timeEntries];
+      setTimeEntries(newEntries);
+      const totalFromDb = newEntries.reduce((s, t) => s + Number(t.hours), 0);
       await supabase.from('tasks').update({
-        actual_hours: timeEntries.reduce((s, t) => s + Number(t.hours), 0) + parseFloat(newTimeHours),
+        actual_hours: Math.round(totalFromDb * 100) / 100,
+        updated_at: new Date().toISOString(),
       }).eq('id', task.id);
     }
     setNewTimeHours(''); setNewTimeDesc('');
   }
 
   async function deleteTimeEntry(teId: string) {
-    await supabase.from('time_entries').delete().eq('id', teId);
-    setTimeEntries(timeEntries.filter((t) => t.id !== teId));
+    setTimeError(null);
+    const { error } = await supabase.from('time_entries').delete().eq('id', teId);
+    if (error) {
+      setTimeError('حذف ناموفق بود');
+      return;
+    }
+    const remaining = timeEntries.filter((t) => t.id !== teId);
+    setTimeEntries(remaining);
+    const totalFromDb = remaining.reduce((s, t) => s + Number(t.hours), 0);
+    await supabase.from('tasks').update({
+      actual_hours: Math.round(totalFromDb * 100) / 100,
+      updated_at: new Date().toISOString(),
+    }).eq('id', task.id);
   }
 
   const availableTasks = allTasks.filter((t) => t.id !== task.id && !t.parent_task_id);
@@ -182,6 +210,20 @@ export function TaskDetailModal({ task, members, columns, allTasks, projectId, o
             <span className="text-sm">وظیفه</span>
           </div>
           <div className="flex items-center gap-1">
+            {activeTimer?.taskId === task.id && isRunning ? (
+              <button onClick={() => stopTimer()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 text-white text-sm font-medium hover:bg-rose-700 transition-colors">
+                <Square size={14} fill="currentColor" />
+                {formatElapsed(elapsedSeconds)}
+              </button>
+            ) : (
+              <button
+                onClick={() => startTimer(task.id, task.title, projectId, members[0]?.full_name ?? 'کاربر', members[0]?.id ?? null)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
+              >
+                <Play size={14} fill="currentColor" />
+                شروع تایمر
+              </button>
+            )}
             <button onClick={handleSave} disabled={saving} className="btn-primary text-sm px-3 py-1.5 disabled:opacity-60">
               <Save size={14} /> {saving ? 'ذخیره...' : 'ذخیره'}
             </button>
@@ -266,7 +308,7 @@ export function TaskDetailModal({ task, members, columns, allTasks, projectId, o
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1.5 flex items-center gap-1"><Timer size={12} /> زمان ثبت شده</label>
-                  <div className="input text-sm flex items-center text-slate-600" dir="ltr">{toPersianNumber(totalTime)} ساعت</div>
+                  <div className="input text-sm flex items-center text-slate-600">{formatDuration(totalTime)}</div>
                 </div>
               </div>
             </div>
@@ -366,6 +408,12 @@ export function TaskDetailModal({ task, members, columns, allTasks, projectId, o
 
           {activeTab === 'time' && (
             <div className="space-y-3">
+              {timeError && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-100 text-sm text-rose-600">
+                  <AlertCircle size={14} />
+                  {timeError}
+                </div>
+              )}
               <div className="grid grid-cols-3 gap-2">
                 <input type="number" value={newTimeHours} onChange={(e) => setNewTimeHours(e.target.value)}
                   placeholder="ساعت" className="input text-sm" dir="ltr" step="0.5" />
@@ -376,10 +424,10 @@ export function TaskDetailModal({ task, members, columns, allTasks, projectId, o
               <div className="flex items-center gap-4 p-3 rounded-xl bg-slate-50 border border-slate-100">
                 <Clock size={18} className="text-slate-400" />
                 <span className="text-sm text-slate-600">مجموع زمان ثبت شده:</span>
-                <span className="text-lg font-bold text-emerald-600" dir="ltr">{toPersianNumber(totalTime)} ساعت</span>
+                <span className="text-lg font-bold text-emerald-600">{formatDuration(totalTime)}</span>
                 {task.estimated_hours && (
                   <span className="text-xs text-slate-400 mr-auto">
-                    برآورد: {toPersianNumber(task.estimated_hours)}h
+                    برآورد: {formatDurationShort(task.estimated_hours ?? 0)}
                   </span>
                 )}
               </div>
@@ -390,7 +438,7 @@ export function TaskDetailModal({ task, members, columns, allTasks, projectId, o
                     <p className="text-sm text-slate-700">{te.description ?? 'ثبت زمان'}</p>
                     <p className="text-xs text-slate-400">{toPersianDateShort(te.entry_date)}</p>
                   </div>
-                  <span className="text-sm font-semibold text-emerald-600" dir="ltr">{toPersianNumber(Number(te.hours))}h</span>
+                  <span className="text-sm font-semibold text-emerald-600">{formatDuration(Number(te.hours))}</span>
                   <button onClick={() => deleteTimeEntry(te.id)} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition-all">
                     <Trash2 size={14} />
                   </button>

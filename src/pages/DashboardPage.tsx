@@ -49,7 +49,7 @@ export function DashboardPage() {
 
 useEffect(() => {
   document.querySelectorAll(".badge").forEach((el) => {
-    el.style.display = "none !important";
+    (el as HTMLElement).style.display = "none";
   });
 }, []);
   

@@ -5,6 +5,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable,
   type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
@@ -33,9 +34,11 @@ import {
 import { supabase } from '@/lib/supabase';
 import type { Task, Member, ProjectColumn } from '@/types';
 import { priorityLabels, priorityColors, columnColorClasses, columnColorOptions } from '@/lib/labels';
-import { toPersianDateShort, toPersianNumber } from '@/lib/persianDate';
+import { toPersianDateShort, toPersianNumber, formatDurationShort } from '@/lib/persianDate';
 import { Avatar, Badge, ProgressBar } from '@/components/ui';
 import { TaskDetailModal } from '@/components/TaskDetailModal';
+import { useTimer, formatElapsed } from '@/contexts/TimerContext';
+import { Play, Square, Pause } from 'lucide-react';
 
 interface KanbanBoardProps {
   projectId: string;
@@ -56,6 +59,7 @@ export function KanbanBoard({ projectId, members }: KanbanBoardProps) {
   const [editColumnColor, setEditColumnColor] = useState('sky');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const { saveStatus } = useTimer();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -66,6 +70,12 @@ export function KanbanBoard({ projectId, members }: KanbanBoardProps) {
   useEffect(() => {
     loadData();
   }, [projectId]);
+
+  useEffect(() => {
+    if (saveStatus === 'saved') {
+      loadData();
+    }
+  }, [saveStatus]);
 
   async function loadData() {
     const [c, t] = await Promise.all([
@@ -317,7 +327,7 @@ export function KanbanBoard({ projectId, members }: KanbanBoardProps) {
   }
 
   return (
-    <div className="flex flex-col h-full" dir="rtl">
+    <div className="flex flex-col flex-1 min-h-0" dir="rtl">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -496,6 +506,7 @@ function SortableColumn({
       </div>
 
       {/* Tasks */}
+      <ColumnDropArea columnId={column.id} hasTasks={tasks.length > 0}>
       <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[80px]">
         <SortableContext items={tasks.map((t) => t.id)} strategy={horizontalListSortingStrategy}>
           {tasks.map((task) => (
@@ -512,6 +523,7 @@ function SortableColumn({
           <div className="text-center py-6 text-xs text-slate-300">کارتی وجود ندارد</div>
         )}
       </div>
+      </ColumnDropArea>
 
       {/* Add task */}
       <div className="p-2 border-t border-slate-100">
@@ -573,6 +585,19 @@ function SortableTaskCard({ task, members, onClick }: SortableTaskCardProps) {
   );
 }
 
+// ===== Column Drop Area (makes empty columns droppable) =====
+function ColumnDropArea({ columnId, hasTasks, children }: { columnId: string; hasTasks: boolean; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: columnId });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex flex-col flex-1 min-h-0 transition-colors ${isOver ? 'bg-emerald-50/50' : ''}`}
+    >
+      {children}
+    </div>
+  );
+}
+
 // ===== Task Card =====
 interface TaskCardProps {
   task: Task;
@@ -582,9 +607,11 @@ interface TaskCardProps {
 }
 
 function TaskCard({ task, members, isOverlay, onClick }: TaskCardProps) {
+  const { activeTimer, startTimer, stopTimer, pauseTimer, resumeTimer, isRunning, isPaused, elapsedSeconds, saveStatus } = useTimer();
+  const isThisTaskTiming = activeTimer?.taskId === task.id && (isRunning || isPaused);
+  const isThisTaskPaused = activeTimer?.taskId === task.id && isPaused;
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
-  const _members = members;
-  void _members;
+  const isSavingThis = saveStatus === 'saving' && !activeTimer;
 
   return (
     <div
@@ -657,11 +684,49 @@ function TaskCard({ task, members, isOverlay, onClick }: TaskCardProps) {
         </div>
 
         <div className="flex items-center gap-2 text-[10px] text-slate-300">
+          {isThisTaskTiming && (
+            <span className="flex items-center gap-1 text-emerald-600 font-mono font-bold tabular-nums" dir="ltr">
+              {formatElapsed(elapsedSeconds)}
+            </span>
+          )}
           {task.actual_hours > 0 && (
             <span className="flex items-center gap-0.5">
               <Clock size={10} />
-              {toPersianNumber(task.actual_hours)}h
+              {formatDurationShort(task.actual_hours)}
             </span>
+          )}
+          {!isOverlay && (
+            <div className="flex items-center gap-0.5">
+              {isThisTaskTiming && !isThisTaskPaused && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); pauseTimer(); }}
+                  className="p-1 rounded-md text-amber-500 hover:bg-amber-50 transition-colors"
+                  title="توقف موقت"
+                >
+                  <Pause size={12} fill="currentColor" />
+                </button>
+              )}
+              {isThisTaskPaused && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); resumeTimer(); }}
+                  className="p-1 rounded-md text-emerald-600 hover:bg-emerald-50 transition-colors"
+                  title="ادامه تایمر"
+                >
+                  <Play size={12} fill="currentColor" />
+                </button>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isThisTaskTiming) { stopTimer(); } else { startTimer(task.id, task.title, task.project_id, members[0]?.full_name ?? 'کاربر', members[0]?.id ?? null); }
+                }}
+                disabled={isSavingThis}
+                className={`p-1 rounded-md transition-colors disabled:opacity-50 ${isThisTaskTiming ? 'text-rose-500 hover:bg-rose-50' : 'text-slate-300 hover:text-emerald-600 hover:bg-emerald-50'}`}
+                title={isThisTaskTiming ? 'ثبت و پایان' : 'شروع تایمر'}
+              >
+                {isThisTaskTiming ? <Square size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" />}
+              </button>
+            </div>
           )}
         </div>
       </div>

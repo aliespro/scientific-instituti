@@ -101,3 +101,61 @@ export function getJalaliYear(date: Date | string): number {
 }
 
 export { jalaliMonths, jalaliDays };
+
+export function formatDuration(hours: number): string {
+  if (hours <= 0) return '۰';
+  const totalMinutes = Math.round(hours * 60);
+
+  if (totalMinutes < 60) {
+    return `${toPersianNumber(totalMinutes)} دقیقه`;
+  }
+
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+
+  if (h < 24 && m > 0) {
+    return `${toPersianNumber(h)} ساعت و ${toPersianNumber(m)} دقیقه`;
+  }
+
+  if (h < 24) {
+    return `${toPersianNumber(h)} ساعت`;
+  }
+
+  const days = Math.floor(h / 24);
+  const remainingHours = h % 24;
+
+  if (remainingHours > 0) {
+    return `${toPersianNumber(days)} روز و ${toPersianNumber(remainingHours)} ساعت`;
+  }
+
+  return `${toPersianNumber(days)} روز`;
+}
+
+export function formatDurationShort(hours: number): string {
+  if (hours <= 0) return '۰';
+  const totalMinutes = Math.round(hours * 60);
+
+  if (totalMinutes < 60) {
+    return `${toPersianNumber(totalMinutes)} دقیقه`;
+  }
+
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+
+  if (h < 24 && m > 0) {
+    return `${toPersianNumber(h)}س ${toPersianNumber(m)}د`;
+  }
+
+  if (h < 24) {
+    return `${toPersianNumber(h)} ساعت`;
+  }
+
+  const days = Math.floor(h / 24);
+  const remainingHours = h % 24;
+
+  if (remainingHours > 0) {
+    return `${toPersianNumber(days)}ر ${toPersianNumber(remainingHours)}س`;
+  }
+
+  return `${toPersianNumber(days)} روز`;
+}
