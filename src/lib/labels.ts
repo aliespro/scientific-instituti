@@ -245,3 +245,126 @@ export const projectHealthDot: Record<ProjectHealth, string> = {
   blocked: 'bg-red-500',
   completed: 'bg-teal-500',
 };
+
+// ===== Correspondence Module =====
+import type {
+  LetterType,
+  LetterStatus,
+  WorkflowStatus,
+  SecurityLevel,
+  ReferralStatus,
+  CommentType,
+} from '@/types';
+
+export const letterTypeLabels: Record<LetterType, string> = {
+  incoming: 'وارده',
+  outgoing: 'صادره',
+  internal: 'داخلی',
+  draft: 'پیش‌نویس',
+  reply: 'پاسخ',
+  circular: 'گردشی',
+  report: 'گزارش',
+  request: 'درخواست',
+  notification: 'اخطار',
+  minutes: 'صورتجلسه',
+  official: 'سند رسمی',
+};
+
+export const letterTypeColors: Record<LetterType, string> = {
+  incoming: 'bg-sky-100 text-sky-700',
+  outgoing: 'bg-emerald-100 text-emerald-700',
+  internal: 'bg-slate-100 text-slate-700',
+  draft: 'bg-amber-100 text-amber-700',
+  reply: 'bg-teal-100 text-teal-700',
+  circular: 'bg-purple-100 text-purple-700',
+  report: 'bg-blue-100 text-blue-700',
+  request: 'bg-orange-100 text-orange-700',
+  notification: 'bg-rose-100 text-rose-700',
+  minutes: 'bg-cyan-100 text-cyan-700',
+  official: 'bg-gold-100 text-gold-700',
+};
+
+export const letterStatusLabels: Record<LetterStatus, string> = {
+  draft: 'پیش‌نویس',
+  registered: 'ثبت شده',
+  in_review: 'در حال بررسی',
+  approved: 'تأیید شده',
+  sent: 'ارسال شده',
+  received: 'دریافت شده',
+  archived: 'بایگانی شده',
+  rejected: 'رد شده',
+};
+
+export const letterStatusColors: Record<LetterStatus, string> = {
+  draft: 'bg-amber-100 text-amber-700',
+  registered: 'bg-sky-100 text-sky-700',
+  in_review: 'bg-orange-100 text-orange-700',
+  approved: 'bg-emerald-100 text-emerald-700',
+  sent: 'bg-teal-100 text-teal-700',
+  received: 'bg-blue-100 text-blue-700',
+  archived: 'bg-slate-100 text-slate-600',
+  rejected: 'bg-red-100 text-red-700',
+};
+
+export const workflowStatusLabels: Record<WorkflowStatus, string> = {
+  draft: 'پیش‌نویس',
+  review: 'در حال بررسی',
+  approval: 'در انتظار تأیید',
+  signature: 'در انتظار امضا',
+  registration: 'ثبت رسمی',
+  sent: 'ارسال شده',
+  archived: 'بایگانی شده',
+};
+
+export const securityLevelLabels: Record<SecurityLevel, string> = {
+  public: 'عمومی',
+  normal: 'عادی',
+  confidential: 'محرمانه',
+  secret: 'سری',
+  top_secret: 'به‌غایت سری',
+};
+
+export const securityLevelColors: Record<SecurityLevel, string> = {
+  public: 'bg-slate-100 text-slate-600',
+  normal: 'bg-sky-100 text-sky-700',
+  confidential: 'bg-amber-100 text-amber-700',
+  secret: 'bg-orange-100 text-orange-700',
+  top_secret: 'bg-red-100 text-red-700',
+};
+
+export const referralStatusLabels: Record<ReferralStatus, string> = {
+  pending: 'در انتظار',
+  in_progress: 'در حال انجام',
+  completed: 'انجام شده',
+  rejected: 'رد شده',
+  overdue: 'معوق',
+};
+
+export const referralStatusColors: Record<ReferralStatus, string> = {
+  pending: 'bg-amber-100 text-amber-700',
+  in_progress: 'bg-sky-100 text-sky-700',
+  completed: 'bg-emerald-100 text-emerald-700',
+  rejected: 'bg-red-100 text-red-700',
+  overdue: 'bg-orange-100 text-orange-700',
+};
+
+export const commentTypeLabels: Record<CommentType, string> = {
+  comment: 'یادداشت',
+  paraf: 'پاراف',
+  margin: 'هامش',
+  instruction: 'دستور',
+};
+
+export const auditActionLabels: Record<string, string> = {
+  created: 'ایجاد شد',
+  viewed: 'مشاهده شد',
+  edited: 'ویرایش شد',
+  forwarded: 'ارجاع شد',
+  approved: 'تأیید شد',
+  rejected: 'رد شد',
+  signed: 'امضا شد',
+  archived: 'بایگانی شد',
+  downloaded: 'دانلود شد',
+  registered: 'ثبت رسمی شد',
+  sent: 'ارسال شد',
+};

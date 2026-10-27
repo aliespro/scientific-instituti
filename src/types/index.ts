@@ -250,3 +250,141 @@ export interface MemberRoleAssignment {
   member?: Member | null;
   org_unit?: OrgUnit | null;
 }
+
+// ===== Correspondence Module =====
+
+export type LetterType = 'incoming' | 'outgoing' | 'internal' | 'draft' | 'reply' | 'circular' | 'report' | 'request' | 'notification' | 'minutes' | 'official';
+
+export type LetterStatus = 'draft' | 'registered' | 'in_review' | 'approved' | 'sent' | 'received' | 'archived' | 'rejected';
+
+export type WorkflowStatus = 'draft' | 'review' | 'approval' | 'signature' | 'registration' | 'sent' | 'archived';
+
+export type SecurityLevel = 'public' | 'normal' | 'confidential' | 'secret' | 'top_secret';
+
+export type ReferralStatus = 'pending' | 'in_progress' | 'completed' | 'rejected' | 'overdue';
+
+export type CommentType = 'comment' | 'paraf' | 'margin' | 'instruction';
+
+export type AuditAction = 'created' | 'viewed' | 'edited' | 'forwarded' | 'approved' | 'rejected' | 'signed' | 'archived' | 'downloaded' | 'registered' | 'sent';
+
+export interface Secretariat {
+  id: string;
+  name: string;
+  code: string;
+  org_unit_id: string | null;
+  division: string;
+  numbering_format: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Letter {
+  id: string;
+  letter_number: string | null;
+  letter_date: string | null;
+  subject: string;
+  type: LetterType;
+  status: LetterStatus;
+  workflow_status: WorkflowStatus;
+  secretariat_id: string | null;
+  security_level: SecurityLevel;
+  priority: Priority;
+  sender_name: string | null;
+  sender_organization: string | null;
+  recipient_name: string | null;
+  recipient_organization: string | null;
+  body: string | null;
+  related_letter_id: string | null;
+  relation_type: string | null;
+  project_id: string | null;
+  event_id: string | null;
+  task_id: string | null;
+  deadline: string | null;
+  response_deadline: string | null;
+  is_archived: boolean;
+  archived_at: string | null;
+  tags: string[];
+  indicator: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  secretariat?: Secretariat | null;
+  recipients?: LetterRecipient[];
+  ccs?: LetterCC[];
+  referrals?: LetterReferral[];
+  comments?: LetterComment[];
+  attachments?: LetterAttachment[];
+  audit_logs?: LetterAuditLog[];
+}
+
+export interface LetterRecipient {
+  id: string;
+  letter_id: string;
+  member_id: string | null;
+  name: string | null;
+  organization: string | null;
+  is_external: boolean;
+  created_at: string;
+  member?: Member | null;
+}
+
+export interface LetterCC {
+  id: string;
+  letter_id: string;
+  member_id: string | null;
+  name: string | null;
+  organization: string | null;
+  is_external: boolean;
+  created_at: string;
+  member?: Member | null;
+}
+
+export interface LetterReferral {
+  id: string;
+  letter_id: string;
+  from_member_id: string | null;
+  from_name: string | null;
+  to_member_id: string | null;
+  to_name: string | null;
+  instruction: string | null;
+  deadline: string | null;
+  priority: Priority;
+  status: ReferralStatus;
+  parent_referral_id: string | null;
+  created_at: string;
+  updated_at: string;
+  from_member?: Member | null;
+  to_member?: Member | null;
+}
+
+export interface LetterComment {
+  id: string;
+  letter_id: string;
+  member_id: string | null;
+  content: string;
+  type: CommentType;
+  created_at: string;
+  member?: Member | null;
+}
+
+export interface LetterAttachment {
+  id: string;
+  letter_id: string;
+  file_name: string;
+  file_size: number;
+  file_type: string | null;
+  file_url: string;
+  file_hash: string | null;
+  created_at: string;
+}
+
+export interface LetterAuditLog {
+  id: string;
+  letter_id: string;
+  action: AuditAction;
+  description: string | null;
+  member_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  member?: Member | null;
+}

@@ -15,6 +15,7 @@ import {
   Bell,
   ChevronDown,
   Network,
+  Mail,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Logo } from '@/components/Logo';
@@ -32,6 +33,7 @@ const navItems = [
   { to: '/members', icon: Users, label: 'پژوهشگران' },
   { to: '/publications', icon: BookMarked, label: 'انتشارات' },
   { to: '/events', icon: CalendarDays, label: 'رویدادها' },
+  { to: '/correspondence', icon: Mail, label: 'مکاتبات' },
   { to: '/organization', icon: Network, label: 'ساختار سازمانی' },
 ];
 

@@ -13,6 +13,7 @@ import { PublicationsPage } from '@/pages/PublicationsPage';
 import { EventsPage } from '@/pages/EventsPage';
 import { OrganizationPage } from '@/pages/OrganizationPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { CorrespondencePage } from '@/pages/CorrespondencePage';
 import { Spinner } from '@/components/ui';
 import { useEffect } from 'react';
 
@@ -96,6 +97,14 @@ function ProtectedRoutes() {
         element={
           <MainLayout>
             <OrganizationPage />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/correspondence"
+        element={
+          <MainLayout>
+            <CorrespondencePage />
           </MainLayout>
         }
       />
