@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Mail, Lock, ArrowLeft, UserPlus, LogIn, AlertCircle } from 'lucide-react';
+import { Users, Mail, Lock, ArrowLeft, UserPlus, LogIn, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Logo } from '@/components/Logo';
 
 export function LoginPage() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, guestSignIn } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -21,11 +21,16 @@ export function LoginPage() {
     const { error } = mode === 'signin' ? await signIn(email, password) : await signUp(email, password);
 
     if (error) {
-      setError(error);
+      setError(faError(error));
       setLoading(false);
     } else {
       navigate('/');
     }
+  };
+
+  const handleGuest = () => {
+    guestSignIn();
+    navigate('/');
   };
 
   return (
@@ -39,28 +44,29 @@ export function LoginPage() {
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
-              <BookOpen size={24} className="text-white" />
+              <Users size={24} className="text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">پژوه‌گر</h1>
-              <p className="text-xs text-emerald-100">سامانه مدیریت موسسه علمی</p>
+              <h1 className="text-xl font-bold">همیارا</h1>
+              <p className="text-xs text-emerald-100">سامانه مدیریت منابع انسانی سازمان</p>
             </div>
           </div>
 
           <div className="space-y-6">
             <h2 className="text-3xl font-bold leading-relaxed">
               مدیریت یکپارچه<br />
-              موسسه علمی و پژوهشی
+              منابع انسانی سازمان
             </h2>
             <p className="text-emerald-100/80 text-lg leading-relaxed max-w-md">
-              پروژه‌های پژوهشی، انتشارات علمی، اعضای هیئت علمی،
-              وظایف و رویدادهای موسسه را در یک سامانه زیبا و کارآمد مدیریت کنید.
+              پرسنل، پروژه‌ها، وظایف، مکاتبات اداری، ساختار سازمانی و رویدادهای
+              سازمان را در یک سامانه زیبا و کارآمد مدیریت کنید.
             </p>
             <div className="space-y-3">
               {[
-                'مدیریت پروژه‌های پژوهشی و اجرایی با نمای کانبان و گانت',
-                'پروفایل پژوهشی با ردیابی مقالات و شاخص‌های استنادی',
-                'تقویم رویدادهای علمی با تاریخ شمسی',
+                'مدیریت پروژه‌ها و وظایف پرسنل با نمای کانبان و گانت',
+                'پرونده پرسنل با رتبه سازمانی و شاخص‌های عملکرد',
+                'مکاتبات اداری کامل با دبیرخانه، ارجاع و بایگانی',
+                'تقویم رویدادهای سازمان با تاریخ شمسی',
               ].map((item) => (
                 <div key={item} className="flex items-center gap-3 text-emerald-100/90">
                   <div className="w-5 h-5 rounded-full bg-emerald-400/20 flex items-center justify-center flex-shrink-0">
@@ -72,7 +78,7 @@ export function LoginPage() {
             </div>
           </div>
 
-          <p className="text-xs text-emerald-200/50">© ۱۴۰۴ - سامانه پژوه‌گر</p>
+          <p className="text-xs text-emerald-200/50">© ۱۴۰۴ - سامانه همیارا</p>
         </div>
       </div>
 
@@ -113,7 +119,7 @@ export function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="input pr-10"
-                    placeholder="example@institute.ir"
+                    placeholder="name@org.ir"
                     dir="ltr"
                   />
                 </div>
@@ -131,7 +137,6 @@ export function LoginPage() {
                     className="input pr-10"
                     placeholder="••••••••"
                     dir="ltr"
-                    minLength={6}
                   />
                 </div>
               </div>
@@ -168,7 +173,7 @@ export function LoginPage() {
           </div>
 
           <button
-            onClick={() => navigate('/')}
+            onClick={handleGuest}
             className="mt-4 flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors mx-auto"
           >
             <ArrowLeft size={16} />
@@ -178,4 +183,12 @@ export function LoginPage() {
       </div>
     </div>
   );
+}
+
+function faError(msg: string): string {
+  if (msg.includes('Invalid login')) return 'ایمیل یا رمز عبور اشتباه است.';
+  if (msg.includes('already registered')) return 'این ایمیل قبلاً ثبت‌نام کرده است.';
+  if (msg.includes('rate limit')) return 'تلاش بیش از حد؛ کمی بعد دوباره امتحان کنید.';
+  if (msg.includes('Email not confirmed')) return 'ایمیل شما تأیید نشده است.';
+  return msg;
 }

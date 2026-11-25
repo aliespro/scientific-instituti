@@ -248,20 +248,20 @@ function MemberFormModal({ departments, onClose, onSaved }: { departments: Depar
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">رتبه علمی</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">رتبه سازمانی</label>
               <select value={rank} onChange={(e) => setRank(e.target.value as AcademicRank)} className="input">
                 {Object.entries(academicRankLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">عنوان</label>
-              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="input" placeholder="استاد، دانشیار..." />
+              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="input" placeholder="مدیر، سرپرست، کارشناس..." />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">گروه علمی</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">واحد سازمانی</label>
             <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className="input">
-              <option value="">انتخاب گروه...</option>
+              <option value="">انتخاب واحد...</option>
               {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
           </div>
@@ -271,7 +271,7 @@ function MemberFormModal({ departments, onClose, onSaved }: { departments: Depar
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">بیوگرافی</label>
-            <textarea value={bio} onChange={(e) => setBio(e.target.value)} className="input min-h-[80px] resize-y" placeholder="شرح حاله علمی..." />
+            <textarea value={bio} onChange={(e) => setBio(e.target.value)} className="input min-h-[80px] resize-y" placeholder="درباره پرسنل..." />
           </div>
           <div className="flex gap-3 pt-3 border-t border-slate-100">
             <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">{saving ? 'در حال ذخیره...' : 'افزودن عضو'}</button>

@@ -63,7 +63,7 @@ useEffect(() => {
   const stats = [
     { label: 'پروژه‌های فعال', value: activeProjects.length, total: projects.length, icon: FolderKanban, color: 'emerald', link: '/projects' },
     { label: 'وظایف در انتظار', value: pendingTasks.length, total: tasks.length, icon: CheckSquare, color: 'sky', link: '/tasks' },
-    { label: 'اعضای علمی', value: members.length, icon: Users, color: 'teal', link: '/members' },
+    { label: 'اعضای تیم', value: members.length, icon: Users, color: 'teal', link: '/members' },
     { label: 'انتشارات', value: publications.length, icon: BookMarked, color: 'amber', link: '/publications' },
   ];
 
@@ -82,9 +82,9 @@ useEffect(() => {
         <div className="absolute top-0 left-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
         <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h2 className="text-2xl font-bold mb-1">به سامانه پژوه‌گر خوش آمدید</h2>
+            <h2 className="text-2xl font-bold mb-1">به سامانه همیارا خوش آمدید</h2>
             <p className="text-emerald-100/80 text-sm">
-              {toPersianDate(new Date())} - نمای کلی موسسه علمی
+              {toPersianDate(new Date())} - نمای کلی سازمان
             </p>
           </div>
           <div className="flex gap-3">

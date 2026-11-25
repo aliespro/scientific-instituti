@@ -18,12 +18,11 @@ import { Spinner } from '@/components/ui';
 import { useEffect } from 'react';
 
 function ProtectedRoutes() {
-  const { session, loading } = useAuth();
+  const { session, loading, isGuest } = useAuth();
 
-  
   if (loading) return <Spinner className="min-h-screen" />;
 
-  if (!session) {
+  if (!session && !isGuest) {
     return (
       <Routes>
         <Route path="/login" element={<LoginPage />} />

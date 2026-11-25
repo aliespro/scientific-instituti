@@ -90,7 +90,7 @@ export function ProjectsPage() {
                   : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
               }`}
             >
-              {d === 'all' ? 'همه بخش‌ها' : d === 'scientific' ? 'بخش علمی' : 'بخش اداری'}
+              {d === 'all' ? 'همه بخش‌ها' : d === 'scientific' ? 'بخش ستادی' : 'بخش عملیاتی'}
             </button>
           ))}
         </div>

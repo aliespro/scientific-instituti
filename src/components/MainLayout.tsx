@@ -30,7 +30,7 @@ const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'داشبورد' },
   { to: '/projects', icon: FolderKanban, label: 'پروژه‌ها' },
   { to: '/tasks', icon: CheckSquare, label: 'وظایف' },
-  { to: '/members', icon: Users, label: 'پژوهشگران' },
+  { to: '/members', icon: Users, label: 'پرسنل' },
   { to: '/publications', icon: BookMarked, label: 'انتشارات' },
   { to: '/events', icon: CalendarDays, label: 'رویدادها' },
   { to: '/correspondence', icon: Mail, label: 'مکاتبات' },

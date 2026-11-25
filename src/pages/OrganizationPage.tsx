@@ -421,7 +421,7 @@ function AddUnitModal({
         <form onSubmit={(e) => { e.preventDefault(); onAdd({ name, type, division, parent_id: parentId, head_member_id: headId }); }} className="p-5 space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">نام واحد *</label>
-            <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="input" placeholder="مثلاً: مؤسسه علمی..." />
+            <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="input" placeholder="مثلاً: معاونت منابع انسانی..." />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

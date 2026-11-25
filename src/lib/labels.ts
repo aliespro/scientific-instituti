@@ -9,13 +9,13 @@ import type {
 } from '@/types';
 
 export const academicRankLabels: Record<AcademicRank, string> = {
-  professor: 'استاد تمام',
-  associate_professor: 'دانشیار',
-  assistant_professor: 'استادیار',
-  researcher: 'پژوهشگر',
-  phd_student: 'دانشجوی دکتری',
-  master_student: 'دانشجوی ارشد',
-  staff: 'کارمند',
+  professor: 'مدیر ارشد',
+  associate_professor: 'معاون',
+  assistant_professor: 'سرپرست',
+  researcher: 'کارشناس',
+  phd_student: 'کارشناس ارشد',
+  master_student: 'کارشناس',
+  staff: 'پرسنل اداری',
 };
 
 export const academicRankColors: Record<AcademicRank, string> = {
@@ -135,8 +135,8 @@ export const columnColorOptions = [
 export const orgUnitTypeLabels: Record<string, string> = {
   group: 'مجموعه',
   division: 'بخش',
-  institute: 'مؤسسه علمی',
-  department: 'گروه',
+  institute: 'شرکت / سازمان',
+  department: 'واحد',
   deputy: 'معاونت',
 };
 
@@ -149,8 +149,8 @@ export const orgUnitTypeIcons: Record<string, string> = {
 };
 
 export const divisionLabels: Record<string, string> = {
-  scientific: 'علمی',
-  administrative: 'اداری',
+  scientific: 'ستادی',
+  administrative: 'عملیاتی',
   shared: 'مشترک',
 };
 

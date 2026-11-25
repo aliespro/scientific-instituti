@@ -261,7 +261,7 @@ function PublicationFormModal({ members, onClose, onSaved }: { members: Member[]
             <input type="text" value={authors} onChange={(e) => setAuthors(e.target.value)} className="input" placeholder="دکتر احمد محمدی، حسین کریمی" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">پژوهشگر مرتبط</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">پرسنل مرتبط</label>
             <select value={memberId} onChange={(e) => setMemberId(e.target.value)} className="input">
               <option value="">انتخاب...</option>
               {members.map((m) => <option key={m.id} value={m.id}>{m.full_name}</option>)}

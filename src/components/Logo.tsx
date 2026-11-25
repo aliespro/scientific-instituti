@@ -1,4 +1,4 @@
-import { BookOpen } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -22,12 +22,12 @@ export function Logo({ size = 'md', showText = true, variant = 'dark' }: LogoPro
         className={`${sizes[size].box} rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center shadow-soft relative overflow-hidden`}
       >
         <div className="absolute inset-0 bg-islamic-pattern opacity-30" />
-        <BookOpen size={sizes[size].icon} className="text-white relative z-10" />
+        <Users size={sizes[size].icon} className="text-white relative z-10" />
       </div>
       {showText && (
         <div className="flex flex-col leading-none">
-          <span className={`${sizes[size].text} font-bold ${textColor}`}>پژوه‌گر</span>
-          <span className={`text-[10px] ${subColor} mt-0.5`}>سامانه مدیریت موسسه علمی</span>
+          <span className={`${sizes[size].text} font-bold ${textColor}`}>همیارا</span>
+          <span className={`text-[10px] ${subColor} mt-0.5`}>سامانه مدیریت منابع انسانی</span>
         </div>
       )}
     </div>

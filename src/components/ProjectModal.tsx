@@ -109,9 +109,9 @@ export function ProjectModal({ members, departments, onClose, onSaved }: Project
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">گروه علمی</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">واحد سازمانی</label>
               <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className="input">
-                <option value="">انتخاب گروه...</option>
+                <option value="">انتخاب واحد...</option>
                 {departments.map((d) => (
                   <option key={d.id} value={d.id}>{d.name}</option>
                 ))}

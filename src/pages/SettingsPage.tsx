@@ -36,10 +36,10 @@ export function SettingsPage() {
               <h3 className="font-bold text-slate-800 mb-4">پروفایل کاربری</h3>
               <div className="flex items-center gap-4 pb-4 border-b border-slate-100">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-xl font-semibold flex items-center justify-center">
-                  پ
+                  ح
                 </div>
                 <div>
-                  <p className="font-medium text-slate-800">پژوهشگر</p>
+                  <p className="font-medium text-slate-800">کاربر همیارا</p>
                   <p className="text-sm text-slate-400">حساب فعال</p>
                 </div>
               </div>
@@ -63,7 +63,7 @@ export function SettingsPage() {
               {[
                 { title: 'اعلان پروژه‌های جدید', desc: 'هنگام ایجاد پروژه جدید مطلع شوید' },
                 { title: 'یادآوری وظایف', desc: 'یادآوری وظایف نزدیک به سررسید' },
-                { title: 'رویدادهای علمی', desc: 'اعلان رویدادهای پیش رو' },
+                { title: 'رویدادهای سازمان', desc: 'اعلان رویدادهای پیش رو' },
                 { title: 'انتشارات جدید', desc: 'اعلان انتشار مقالات جدید' },
               ].map((item) => (
                 <div key={item.title} className="flex items-center justify-between p-3 rounded-xl border border-slate-100">
@@ -131,9 +131,9 @@ export function SettingsPage() {
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
                 <div className="flex items-center gap-3 mb-2">
                   <Database size={20} className="text-emerald-600" />
-                  <p className="font-medium text-slate-700">پایگاه داده موسسه</p>
+                  <p className="font-medium text-slate-700">پایگاه داده سازمان</p>
                 </div>
-                <p className="text-sm text-slate-500">داده‌های موسسه روی پایگاه داده امن ذخیره می‌شوند.</p>
+                <p className="text-sm text-slate-500">داده‌های سازمان روی پایگاه داده امن ذخیره می‌شوند.</p>
               </div>
               <p className="text-xs text-slate-400">برای خروجی‌گیری یا انتقال داده با مدیر سیستم تماس بگیرید.</p>
             </div>
